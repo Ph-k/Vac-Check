@@ -1,8 +1,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "../DataStructures/HashTable.h"
-#include "../Utilities/Utilities.h"
+#include "HashTable.h"
+#include "Utilities.h"
 
 // The abacus structure consists only of a hashtable
 typedef struct Abacus {

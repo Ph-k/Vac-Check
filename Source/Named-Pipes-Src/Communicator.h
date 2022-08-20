@@ -1,12 +1,13 @@
 typedef struct Communicator Communicator;
 
-int getCommunicationFd(Communicator *c);
+int getReadFifoFd(Communicator *c);
 
-Communicator* initClientCommunicator(int *port, unsigned int pipeBufferSize);
-int closeClientCommunicator(Communicator* c);
+int createCommunicator(char* name);
+Communicator* openParrentCommunicator(char* name, unsigned int pipeBufferSize);
+int closeAndDestroyCommunicator(Communicator* c);
 
-Communicator* initServerCommunicator(int port, unsigned int socketBufferSize);
-int closeServerCommunicator(Communicator* c);
+Communicator* openMonitorCommunicator(char* name);
+int closeCommunicator(Communicator* c);
 
 int sendMessage(Communicator* c,const void* message, unsigned int messageSize);
 int recieveMessage(Communicator* c, void* message, unsigned int *messageSize);

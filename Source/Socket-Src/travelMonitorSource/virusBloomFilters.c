@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../DataStructures/BloomFilter.h"
+#include "BloomFilter.h"
 
 // The travel monitor needs a way of organazing the bloom filters of all the viruses
 typedef struct virusBloomFilter{

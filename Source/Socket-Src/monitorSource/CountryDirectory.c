@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../Entities/StringDict.h"
+#include "StringDict.h"
 
 // A country directory has
 typedef struct countryDirectory{

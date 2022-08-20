@@ -1,8 +1,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "../DataStructures/BloomFilter.h"
-#include "../DataStructures/SkipList.h"
+#include "BloomFilter.h"
+#include "SkipList.h"
 #include "Person.h"
 #include "Virus.h"
 

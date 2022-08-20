@@ -7,17 +7,17 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <semaphore.h>
-#include "./fileReader.h"
+#include "fileReader.h"
 #include "CountryDirectory.h"
-#include "../Communicator.h"
-#include "../Utilities/Utilities.h"
-#include "../Utilities/LogFileWritter.h"
-#include "../DataStructures/SkipList.h"
-#include "../DataStructures/BloomFilter.h"
-#include "../DataStructures/HashTable.h"
-#include "../Entities/Virus.h"
-#include "../Entities/Person.h"
-#include "../Entities/StringDict.h"
+#include "Communicator.h"
+#include "Utilities.h"
+#include "LogFileWritter.h"
+#include "SkipList.h"
+#include "BloomFilter.h"
+#include "HashTable.h"
+#include "Virus.h"
+#include "Person.h"
+#include "StringDict.h"
 
 static hashTable *virusesHT,*peopleHT;
 static hashTable *countriesDict;

@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "BitArrey.h"
-#include "../Utilities/HashFunctions.h"
+#include "HashFunctions.h"
 
 // Number of hash functions used to hash the given string
 #define K_HASH 16

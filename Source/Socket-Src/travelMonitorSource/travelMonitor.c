@@ -9,10 +9,10 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/types.h>
-#include "../Communicator.h"
-#include "./travelController.h"
-#include "../Utilities/Utilities.h"
-#include "../DataStructures/HashTable.h"
+#include "Communicator.h"
+#include "travelController.h"
+#include "Utilities.h"
+#include "HashTable.h"
 
 int main(int argc, char **argv){
     if(argc!=13) {printf("Travel monitor: check arguments format!\n"); return -1;}

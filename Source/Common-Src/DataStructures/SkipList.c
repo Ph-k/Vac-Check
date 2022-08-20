@@ -3,9 +3,8 @@
 #include <string.h>
 #include <time.h>
 #include "SkipList.h"
-#include "../Utilities/Utilities.h"
-#include "../Entities/Person.h"
-//#include "../Entities/Abacus.h"
+#include "Utilities.h"
+#include "Person.h"
 
 #define PROBABILITY 0.6 // Probility of a node to have one more level in the skip list (has to be between [0,1])
 

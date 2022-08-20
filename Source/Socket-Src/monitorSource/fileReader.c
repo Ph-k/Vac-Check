@@ -1,10 +1,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include "../DataStructures/BloomFilter.h"
-#include "../DataStructures/HashTable.h"
-#include "./monitorController.h"
-#include "../Utilities/Utilities.h"
+#include "BloomFilter.h"
+#include "HashTable.h"
+#include "monitorController.h"
+#include "Utilities.h"
 
 // Given a file with initialization data, the function reads it, and inserts the valid records, printing any error messages
 int citizensFileReader(char* filename, pthread_mutex_t *mutexes){

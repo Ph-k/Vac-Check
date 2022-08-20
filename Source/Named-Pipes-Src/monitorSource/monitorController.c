@@ -1,23 +1,21 @@
 #include <stdio.h>
-#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #include <dirent.h>
-#include <pthread.h>
-#include <sys/stat.h>
 #include <sys/types.h>
-#include <semaphore.h>
-#include "./fileReader.h"
+#include <sys/stat.h>
+#include <errno.h>
+#include "fileReader.h"
 #include "CountryDirectory.h"
-#include "../Communicator.h"
-#include "../Utilities/Utilities.h"
-#include "../Utilities/LogFileWritter.h"
-#include "../DataStructures/SkipList.h"
-#include "../DataStructures/BloomFilter.h"
-#include "../DataStructures/HashTable.h"
-#include "../Entities/Virus.h"
-#include "../Entities/Person.h"
-#include "../Entities/StringDict.h"
+#include "Communicator.h"
+#include "Utilities.h"
+#include "LogFileWritter.h"
+#include "SkipList.h"
+#include "BloomFilter.h"
+#include "HashTable.h"
+#include "Virus.h"
+#include "Person.h"
+#include "StringDict.h"
 
 static hashTable *virusesHT,*peopleHT;
 static hashTable *countriesDict;
@@ -31,25 +29,66 @@ static unsigned int acceptedTravelRequests=0, rejectedTravelRequests=0;
 #define INIT_MODE 0
 #define ADD_MODE 1
 
-// A max buffer for string size
-#define MAX_STRING_SIZE 200
+#define MAX_STRING_SIZE 200 // A max buffer for string size
 
-// We asume that longest posible countryfile lenght is '/United_Kingdom_of_Great_Britain-101.txt\0'
-#define MAX_COUNTRY_LENGHT 41
+// Given a directory it calls the citizensFileReader of the 1st assigment, which reads the records and places the data in the program data strcuctures
+void dummyCitizensFileReader(void* C_Dir, void *mode){
 
+	/* The function has two modes
+	   INIT_MODE: calls citizensFileReader() and reads the data of all the files
+	   ADD_MODE: calls citizensFileReader() and reads the data ONLY for the files that have not been read (usefull for the addVaccinationRecords)
+	*/
+	if(*((char*)mode)!=INIT_MODE && *((char*)mode)!=ADD_MODE) return;
 
-#define NUM_OF_MUTEXES 10
-//Mutexes indexes on the mutex arrey used latter in the code
-#define LIBRARY_FUNC_MUTEX 0
-#define PEOPLE_HT_MUTEX 1
-#define VIRUSES_HT_MUTEX 2
-#define VIRUSES_VAC_SL_MUTEX 3
-#define VIRUSES_BF_MUTEX 4
-#define VIRUSES_NO_VAC_SL_MUTEX 5
-#define DIRECTORIES_DICT_MUTEX 6
-#define PERSON_MUTEX 7
-#define CYCLIC_BUFFER_MUTEX 8
-#define COUNTRY_DIRECTORIES_MUTEX 9
+	// Getting the name of the directory from the countryDirectory structure, and checking accesability
+	countryDirectory* countryDir = (countryDirectory*)C_Dir;
+	char* countryDirName = (char*)getDirName(countryDir);
+    DIR *directory = opendir(countryDirName);
+    if(directory==NULL){
+        printf("Directory %s ",(char*)countryDirName);
+        if(errno == EACCES){
+            printf("is unaccessible due to it's permisions!\n");
+        }else if(errno == ENOENT){
+            printf("does not exist!\n");
+        }else{
+            printf("error!\n");
+        }
+        return; // The file is unaccesable due to reasons, we can not continue
+    }
+
+	// Here all the files of the folder are read
+    struct dirent *direntp;
+    struct stat InodeInf;
+    char *recPath=NULL,*countryDirW=NULL;
+    while ( (direntp=readdir(directory)) != NULL ){// While there are files in the directory
+        if(strcmp(direntp->d_name,".")==0 || strcmp(direntp->d_name,"..")==0) continue; //Skipping the entries '.' & '..'
+		// The path of the file is created
+        myStringCat(&countryDirW,countryDirName,"/"); // ex Greece + / = Greece/
+        myStringCat(&recPath,countryDirW, direntp->d_name);// ex Greece/ + Greece-01 = Greece/Greece-01
+
+		// Checking if the path leads to a regural file
+        stat(recPath,&InodeInf);
+        if((InodeInf.st_mode & S_IFMT) != S_IFREG) printf("Error: %s is not a regular file!\n",recPath);
+
+		// Depending on the mode
+		if (*((char*)mode) == INIT_MODE){
+			// In the init mode we read the file no matter what
+			insertFileToCountryDir(C_Dir,recPath);
+		}else if(*((char*)mode) == ADD_MODE){
+			// In the add mode we read the file only if it has not been read before
+			if (checkFileInCountryDir(C_Dir,recPath) == 1){
+				continue;
+			}else{
+				insertFileToCountryDir(C_Dir,recPath);
+			}
+		}
+
+        if( citizensFileReader(recPath) != 0 ) printf("Initilazation error in file %s\n",recPath);
+    }
+    if(recPath != NULL) free(recPath);
+    if(countryDirW != NULL) free(countryDirW);
+    closedir(directory);
+}
 
 // Function used to send the bloom filters while traversing the virus HT
 void sendOneBloomFilter(void* voidVirus,void* voidCommunicator){
@@ -70,215 +109,18 @@ void sendAllBloomFilters(Communicator *c){
 	sendMessage(c,&endC,sizeof(char));
 }
 
-// This structure contains the arguments for the thread function, it is passed casted as void*
-struct dummyTreadFunArgs{
-	// Each thread has
-	pthread_mutex_t *mutexes; // The arrey of mutexes, which in combination with the above defines provides access to all the mutexes
-	char* cyclicBuffer; // A pointer to the cyclicBuffer
-	int cyclicBufferSize; // The size of the cyclic buffer in bytes (not in file paths)
-	sem_t *cyclicBufferEmpty; // A semaphore to wait while there are no empty slots on the buffer
-	sem_t *cyclicBufferFull; // A semaphore to wait while there are no records one the buffer
-	int cyclicBufferIndex; // The current index to the last filepath record
-	int cyclicBufferRecordSize; // The size of a filepath in bytes
-};
-
-// This function impliments the execution of the threads, which read and initliaze all the data structures using mutexes
-void* threadInitialazation(void* structArg){
-	struct dummyTreadFunArgs* args = (struct dummyTreadFunArgs*)structArg;
-
-	char loopCondition=1,*filePath=NULL;
-
-	// While there is data to be read on the cyclic buffer
-	while(loopCondition == 1){
-		sem_wait(args->cyclicBufferFull); // Waiting until there is data to be read on the cyclic buffer
-		pthread_mutex_lock(&(args->mutexes[CYCLIC_BUFFER_MUTEX])); // The removal of a record from the buffer is C.S.
-
-		// If the index of the last record in the buffer is 0 and the buffer is empty, there are no more records
-		// Notes: 
-		// 1) While there is data on the buffer the index is never 0, if only one record is on the buffer the index is set to 1.
-		// 2) If all the threads have emptied the buffer and the main thread has not places new records,
-		//    the threads will be stuck on the cyclicBufferFull first.
-		if(args->cyclicBufferIndex == 0 && checkIfNull(args->cyclicBuffer,args->cyclicBufferSize) == 1 ){ // Buffer empty case
-			// Waking all other threads by dealocating locked sem and mutex. So they can also check the buffer and terminate.
-			pthread_mutex_unlock(&(args->mutexes[CYCLIC_BUFFER_MUTEX]));
-			sem_post(args->cyclicBufferFull);
-			loopCondition = 0;
-			break;
-		}
-		// One record will be read
-		(args->cyclicBufferIndex)--;
-
-		// Getting the record/filepath (will terminate with a '\0')
-		filePath = strdup(args->cyclicBuffer + args->cyclicBufferRecordSize*args->cyclicBufferIndex);
-
-		// Removing the read record from the buffer
-		memset(args->cyclicBuffer + args->cyclicBufferRecordSize*args->cyclicBufferIndex,0,args->cyclicBufferRecordSize);
-
-		// Dealocating locked sem and mutex for access to the cyclic buffer
-		pthread_mutex_unlock(&(args->mutexes[CYCLIC_BUFFER_MUTEX]));
-		sem_post(args->cyclicBufferEmpty);
-
-		// Reading the data from the file, any access to common data structures is protected with mutexes
-		if( citizensFileReader(filePath,args->mutexes) != 0 ) printf("Initilazation error in file %s\n",filePath);
-
-		// Freeing memory of the strduped filepath string
-		free(filePath);
-	}
-
-	return NULL;
-}
-
-// This function is executed from the main thread, it creates the threads executing the above function, and then fills the buffer
-int saveFileDataToDataStructs(int numThreads,int cyclicBufferCount, char** countryArgs, char mode){
-	int i;
-	struct dummyTreadFunArgs dummyThreadArgs;
-
-	// Finding the lengthier filepath, in order to allocated enough space in the cyclic buffer
-	dummyThreadArgs.cyclicBufferRecordSize = 0;
-   	for(i=0; countryArgs[i] != NULL; i++){
-		if( dummyThreadArgs.cyclicBufferRecordSize < strlen(countryArgs[i]) )
-			dummyThreadArgs.cyclicBufferRecordSize = strlen(countryArgs[i]);
-    }
-	// The maximum path size of the cyclic buffer is the biggest directory path + the longest countryfile name posible
-	dummyThreadArgs.cyclicBufferRecordSize += MAX_COUNTRY_LENGHT;
-
-	// Initilazing the arguments of the threads
-	dummyThreadArgs.cyclicBufferIndex = 0;
-	dummyThreadArgs.cyclicBufferSize = dummyThreadArgs.cyclicBufferRecordSize*cyclicBufferCount*sizeof(char);
-	dummyThreadArgs.cyclicBuffer = malloc(dummyThreadArgs.cyclicBufferSize);
-	memset(dummyThreadArgs.cyclicBuffer,0,dummyThreadArgs.cyclicBufferSize);
-
-	// Creating all the needed mutexes and placing them in an arrey
-	int mutexesCount = NUM_OF_MUTEXES;
-	dummyThreadArgs.mutexes = malloc(sizeof(pthread_mutex_t )*mutexesCount);
-	for(i=0; i<mutexesCount; i++){
-		pthread_mutex_init(dummyThreadArgs.mutexes + i, NULL);
-	}
-
-	sem_t *cyclicBufferFull = malloc(sizeof(sem_t)), // Semaphore to wait while there are no records one the buffer
-	      *cyclicBufferEmpty = malloc(sizeof(sem_t)); // Semaphore to wait while there are no empty slots on the buffer
-	dummyThreadArgs.cyclicBufferFull = cyclicBufferFull;
-	dummyThreadArgs.cyclicBufferEmpty = cyclicBufferEmpty;
-	pthread_t threads[numThreads];
-
-	// Creating the two needed semaphores for the buffer
-	if ( 
-		sem_init(cyclicBufferFull,0,0) != 0
-		||
-		sem_init(cyclicBufferEmpty,0,cyclicBufferCount) != 0
-	) {perror("Monitor: sem_init() "); return -1;}
-
-	initialized = 1;// Data structures of the program are to be initialized now from the threads
-
-	// Creating all the needed threads and starting their execution
-	for(i=0; i<numThreads; i++){
-		if(pthread_create(threads + i, NULL, &threadInitialazation, &dummyThreadArgs) != 0)
-			perror("Monitor: Thread creation failed ");
-	}
-
-	// The main thread will now fill the cyclic buffer
-	struct dirent *direntp;
-	DIR *cDIR;
-	struct stat InodeInf;
-	char *recPath=NULL,*countryDirW=NULL;
-	countryDirectory* countryDir;
-	// For all the given country directories
-	for(i=0; countryArgs[i] != NULL; i++){
-		// Note: the following hashtable is accesed only from the main thread, so no mutex needed
-		// Inserting the country directory to the structure responsable for "remembering" the read files if needed.
-		countryDir = hashFind(countriesDirs,countryArgs[i]);
-		if(countryDir == NULL){
-			countryDir = newCountryFileName(countryArgs[i]);
-			HashInsert(countriesDirs,countryDir);
-		}
-
-		cDIR = opendir(countryArgs[i]);
-		if(cDIR == NULL) perror("Monitor: Dir() ");
-		direntp=readdir(cDIR);
-		while ( direntp != NULL ){// While there are files in the directory
-			// We skip the entries '.' & '..'
-			if(strcmp(direntp->d_name,".")==0 || strcmp(direntp->d_name,"..")==0) { direntp=readdir(cDIR); continue; }
-
-			// The path of the file is created
-			myStringCat(&countryDirW,countryArgs[i],"/"); // ex Greece + / = Greece/
-			myStringCat(&recPath,countryDirW, direntp->d_name);// ex Greece/ + Greece-01 = Greece/Greece-01
-
-			// Checking if the path leads to a regural file
-			stat(recPath,&InodeInf);
-			if((InodeInf.st_mode & S_IFMT) != S_IFREG) printf("Error: %s is not a regular file!\n",recPath);
-
-			// Depending on the mode
-			if ( mode == INIT_MODE){
-				// In the init mode we read the files and their data no matter what
-				insertFileToCountryDir(countryDir,recPath);
-			}else if( mode == ADD_MODE){
-				// In the add mode we read the file only if it has not been read before
-				if (checkFileInCountryDir(countryDir,recPath) == 1){
-					// File read, insertion will not happen
-					direntp=readdir(cDIR);
-					continue;
-				}else{
-					insertFileToCountryDir(countryDir,recPath);
-				}
-			}
-			// Note: the countryDir structure is a node of the countriesDirs HT. Both are not accessed concurrently by any other thread
-
-			// Now that the main thread has "produced" a file path entry for the cyclic buffer,
-			// the only thing left, is for it to be placed on the cyclic buffer
-			// Waiting until there are empty slots on the buffer
-			sem_wait(cyclicBufferEmpty);
-			// As in the threadInitialazation, access to the the cyclic buffer is considered C.S. protected with a mutex
-			pthread_mutex_lock(&(dummyThreadArgs.mutexes[CYCLIC_BUFFER_MUTEX]));
-			// Coppying the file path string to the right location on the buffer using memcpy
-			memcpy(
-				dummyThreadArgs.cyclicBuffer + dummyThreadArgs.cyclicBufferRecordSize*dummyThreadArgs.cyclicBufferIndex,
-				recPath,
-				strlen(recPath)*sizeof(char)
-			);
-			(dummyThreadArgs.cyclicBufferIndex)++;// A record has been added to the buffer
-			// Unlocking mutex, and posting on semaphore to give access of the C.S. to another thread
-			pthread_mutex_unlock(&(dummyThreadArgs.mutexes[CYCLIC_BUFFER_MUTEX]));
-			sem_post(cyclicBufferFull);
-
-			direntp=readdir(cDIR);
-    	}
-		closedir(cDIR);
-	}
-	// After all the records have been placed to the cyclic buffer,
-	// this post to the semaphore will triger at some point one thread to realize that no more records will be writen,
-	// which will then post the semaphore again to signal to another thread that no more records will be writen etc.
-	sem_post(dummyThreadArgs.cyclicBufferFull);
-
-	if(recPath!=NULL) free(recPath);
-	if(countryDirW!=NULL) free(countryDirW);
-
-	// Waiting for all threads to empty the buffer, and terminate
-	for(i=0; i<numThreads; i++){
-		if(pthread_join(threads[i], NULL) != 0)
-			perror("Monitor: Thread join failed ");
-	}
-
-	// Deleting all the mutexes, the semaphores, and the dynamicaly allocated memory
-	for(i=0; i<mutexesCount; i++){
-		pthread_mutex_destroy(dummyThreadArgs.mutexes + i);
-	}
-	sem_destroy(cyclicBufferFull);
-	sem_destroy(cyclicBufferEmpty);
-	free(cyclicBufferFull);
-	free(cyclicBufferEmpty);
-	free(dummyThreadArgs.cyclicBuffer);
-	free(dummyThreadArgs.mutexes);
-	return 0;
-}
-
-// Initilazes the monitors data strcutures and sends any needed data to the travel monitor
-int initilizeMonitor(int port,int numThreads,int cyclicBufferCount, unsigned int bloomSize, char** countryArgs, unsigned int socketBufferSize, Communicator **mainCommunicatorPointer){
-	bloomFilterSize = bloomSize;
-
-	c = initServerCommunicator(port,socketBufferSize); // Initialazing socket communication
+// Initilazes the monitors data strcutures and send any needed data to the travel monitor
+int initilizeMonitor(char* communicatorFile, Communicator **mainCommunicatorPointer){
+	c = openMonitorCommunicator(communicatorFile);
 	*mainCommunicatorPointer = c;
-    countriesDirs = newHashTable(10,cmpCountryDir,getDirName,voidStringHash,printCountryDir,freeDirString);
-    int hashSize=1;
+    countriesDirs = newHashTable(1,cmpCountryDir,getDirName,voidStringHash,printCountryDir,freeDirString);//change 1
+    int hashSize=1,bloomSize;
+	unsigned int size=sizeof(int);
+
+	// Recieving the size of the bloom filter
+    recieveMessage(c,&bloomSize,&size);
+	// The size of all bloom filters (in bytes)
+	bloomFilterSize = bloomSize;
 
     // The default max size of all the skiplists (it was noted in piazza that it is good practice for a max limit to exist)
 	skipListHeight = 10;
@@ -291,125 +133,75 @@ int initilizeMonitor(int port,int numThreads,int cyclicBufferCount, unsigned int
 	// The people hash table simply has all the citizens for easy information
 	peopleHT = newHashTable(hashSize,&PersonCmp,&GetPersonId,&PersonHash,&printPerson,&deleteVoidPerson);
 	
-	// Countries are a piece of infomation which will be repeated throughout the person records
+	// Countries are a piece of infomation which will be repeted throughout the person records
 	// Thus in order to minimize data duplication, it worths to save all the countries in a hashtable (since there will not be many)
 	countriesDict = initializeStringDict(hashSize);
 
-	// This function now will create threads which will then fill the datastructures with the data from ALL (INIT_MODE) the files
-	saveFileDataToDataStructs(numThreads, cyclicBufferCount, countryArgs, INIT_MODE);
+    char *buff=malloc(sizeof(char)*MAX_STRING_SIZE);
+    size=-1;
+	// Recieving the country directories
+    do{// Do while since when we start we dont have values for the buff and size
+        if(size!=-1){
+            HashInsert(countriesDirs,newCountryFileName(buff));
+        }
+		size = MAX_STRING_SIZE;
+        memset(buff,0,size);
+        recieveMessage(c,buff,&size);
+    }while(buff[0]!=EOF && size!=sizeof(char));
+    free(buff);
+
+	initialized = 1;// Data structures of the orogram are initialized
+
+
+	// Traversing the countries directory HT using the citizen file reader function
+	char mode = INIT_MODE;
+    hashTraverse(countriesDirs, dummyCitizensFileReader, &mode);
 
 	// Sending all the bloom filters to the parrent
-	sendAllBloomFilters(c);
+    sendAllBloomFilters(c);
 
 	return 0;
 }
 
-// SilentInsert is the record insertion function from the first assigment
-int silentInsert(char* Id, char* lastName, char* firstName, char* country,unsigned int age, char* virusName,char vaccinated,char* date, pthread_mutex_t *mutexes){
+// SilentInsert in the record insertion function from the first assigment
+int silentInsert(char* Id, char* lastName, char* firstName, char* country,unsigned int age, char* virusName,char vaccinated,char* date){
 	if(initialized == 0) return -4; //If the data structures have not been initialized, error code is returned
 
-	// Note: All the common/concurrently accessed data structures are protected with their own mutexes,
-	// ensuring respectable efficiency and safety.
-
-	// Finding (or creating) the person maintioned in the record. (Error if person data is invalid)
-	pthread_mutex_lock(&(mutexes[PEOPLE_HT_MUTEX]));
 	Person *person = (Person*)hashFind(peopleHT,Id);
 	if(person==NULL){
-		pthread_mutex_lock(&(mutexes[PERSON_MUTEX]));
 		person = createPerson(Id,firstName,lastName,country,age,countriesDict);
-		pthread_mutex_unlock(&(mutexes[PERSON_MUTEX]));
-
 		if(HashInsert(peopleHT,person)!=1){
 			printf("error in pepole insertion!\n");
-			pthread_mutex_unlock(&(mutexes[PEOPLE_HT_MUTEX])); // The functions ends, unlocking mutex to avoid deadlock
 			return -2;
 		}
 	}else{
 		if(FullPersonCmp(person,firstName,lastName,country,age)!=0){
-			pthread_mutex_unlock(&(mutexes[PEOPLE_HT_MUTEX])); // The functions ends, unlocking mutex to avoid deadlock
 			return -3;
 		}
 	}
-	pthread_mutex_unlock(&(mutexes[PEOPLE_HT_MUTEX]));
 
-	// Same thing for virus, searching for the virus in the record (creating if it does not exist). All protected but mutexes
-	pthread_mutex_lock(&(mutexes[VIRUSES_HT_MUTEX]));
 	Virus *virus = (Virus*)hashFind(virusesHT,virusName);
 	if(virus==NULL){
-
-		// The virus creation needs to access a lot of data structures
-		// The following loop ensures that all mutexes will be aquiered before creating the virus,
-		// While avoiding deadlocks due to a thread holding one mutex while beeing locked on mutex held from another process
-		char acquired = 0;
-		while(acquired == 0){// While not all mutexes have aquired
-			// Trying to lock the vaccinated S.L. mutex
-			if( pthread_mutex_trylock(&(mutexes[VIRUSES_VAC_SL_MUTEX])) !=0 ){
-				continue; // If the above fails we try again on the next iteration
-			}
-
-			// If the vaccinated S.L. mutex was aquired, the thread will now try to aquire the next mutex
-			if( pthread_mutex_trylock(&(mutexes[VIRUSES_NO_VAC_SL_MUTEX])) !=0 ){
-				// If the above fails, any aquired mutuxes are unlocked to avoid deadlocks. And the thread retries to aquire
-				pthread_mutex_unlock(&(mutexes[VIRUSES_VAC_SL_MUTEX]));
-				continue;
-			}
-
-			// Same as above for the bloom filter mutex
-			if( pthread_mutex_trylock(&(mutexes[VIRUSES_BF_MUTEX])) != 0 ){
-				pthread_mutex_unlock(&(mutexes[VIRUSES_VAC_SL_MUTEX]));
-				pthread_mutex_unlock(&(mutexes[VIRUSES_NO_VAC_SL_MUTEX]));
-				continue;
-			}
-
-			acquired = 1; // If we reached here all the mutexes where aquired, the loop will terminate
-		}
-
-		// Creating the virus, and exiting the C.S.
 		virus = createVirus(virusName,skipListHeight,bloomFilterSize);
-		pthread_mutex_unlock(&(mutexes[VIRUSES_VAC_SL_MUTEX]));
-		pthread_mutex_unlock(&(mutexes[VIRUSES_NO_VAC_SL_MUTEX]));
-		pthread_mutex_unlock(&(mutexes[VIRUSES_BF_MUTEX]));
-
 		if(HashInsert(virusesHT,virus)!=1){
 			printf("error in virus insertion!\n");
-			pthread_mutex_unlock(&(mutexes[VIRUSES_HT_MUTEX]));
 			return -2;
 		}
 	}
-	pthread_mutex_unlock(&(mutexes[VIRUSES_HT_MUTEX]));
 
 	Person *tp;
 	char *td;
-	// Inserting vaccination information for the given record
 	if(vaccinated==1){
-		pthread_mutex_lock(&(mutexes[VIRUSES_VAC_SL_MUTEX]));
-		if( SkipListSearch(virus->not_vaccinated_persons,Id,&tp,&td) == 1 ){
-			pthread_mutex_unlock(&(mutexes[VIRUSES_VAC_SL_MUTEX]));
+		if( SkipListSearch(virus->not_vaccinated_persons,Id,&tp,&td) == 1 )
 			return -1;//Already in not vaccinated skip list
-		}
-		if( SkipListInsert(virus->vaccinated_persons,person,date) == -1){
-			pthread_mutex_unlock(&(mutexes[VIRUSES_VAC_SL_MUTEX]));
+		if( SkipListInsert(virus->vaccinated_persons,person,date) == -1) 
 			return -1;//Already in vaccinated skip list
-		}
-		pthread_mutex_unlock(&(mutexes[VIRUSES_VAC_SL_MUTEX]));
-
-		pthread_mutex_lock(&(mutexes[VIRUSES_BF_MUTEX]));
-		if( BloomFilterInsert(virus->bloomFilter,(unsigned char*)Id)!=0 ){
-			pthread_mutex_unlock(&(mutexes[VIRUSES_BF_MUTEX]));
-			return -2;
-		}
-		pthread_mutex_unlock(&(mutexes[VIRUSES_BF_MUTEX]));
+		if( BloomFilterInsert(virus->bloomFilter,(unsigned char*)Id)!=0 ) return -2;
 	}else{
-		pthread_mutex_lock(&(mutexes[VIRUSES_NO_VAC_SL_MUTEX]));
-		if( SkipListSearch(virus->vaccinated_persons,Id,&tp,&td) == 1 ){
-			pthread_mutex_unlock(&(mutexes[VIRUSES_NO_VAC_SL_MUTEX]));
+		if( SkipListSearch(virus->vaccinated_persons,Id,&tp,&td) == 1 )
 			return -1;//Already in vaccinated skip list
-		}
-		if( SkipListInsert(virus->not_vaccinated_persons,person,NULL) == -1){
-			pthread_mutex_unlock(&(mutexes[VIRUSES_NO_VAC_SL_MUTEX]));
+		if( SkipListInsert(virus->not_vaccinated_persons,person,NULL) == -1)
 			return -1;//Already in not vaccinated skip list
-		}
-		pthread_mutex_unlock(&(mutexes[VIRUSES_NO_VAC_SL_MUTEX]));
 	}
 	
 	return 0;
@@ -467,14 +259,20 @@ int travelRequest(char* citizenID,char* virusName, char* requestedDate){
 }
 
 // Impliments part of the monitor for the addVaccinationRecords command
-int addVaccinationRecords(char* country, int numThreads, int cyclicBufferCount){
-	// The same function used in the initilazation is re-used, so the country arguments needs to be on an arg arrey format
-	char **countryArgs = malloc(sizeof(char*)*2);
-	countryArgs[0] = country;
-	countryArgs[1] = NULL;
-	// The function will read all the data in ADD_MODE
-	saveFileDataToDataStructs(numThreads, cyclicBufferCount, countryArgs, ADD_MODE);
-	free(countryArgs);
+int addVaccinationRecords(char* country){
+	countryDirectory *countryDir = (countryDirectory *)hashFind(countriesDirs, country);
+
+	// If the country directory has been read in the past, we use the add mode of the dummyCitizensFileReader
+	char mode = ADD_MODE;
+
+	// If the country has not been read, it is the first time all files will be read, and we use the INIT_MODE.
+	if ( countryDir==NULL ){
+		countryDir = newCountryFileName(country);
+		HashInsert(countriesDirs,countryDir);
+		mode = INIT_MODE;
+	}
+
+	dummyCitizensFileReader(countryDir,&mode);
 
 	// After the data is read, we send the updated bloom filters
 	sendAllBloomFilters(c);
@@ -548,9 +346,6 @@ void createLogFile(){
 int terminateMonitor(){
 	if(initialized == 0) return -1; //If the data structures have not been initialized, error code is returned
 
-	// Creating a log file before exiting as requested
-	createLogFile();
-
 	//The memory from all data structures is freed	
 	destroyHashTable(virusesHT);
 	destroyHashTable(peopleHT);
@@ -558,7 +353,7 @@ int terminateMonitor(){
 	destroyHashTable(countriesDirs);
 
 	// And the communicator is closed allong with its fifo files
-	closeServerCommunicator(c);
+	closeCommunicator(c);
 
 	initialized = 0; //The program data structures are no longer initialized
 	return 0;

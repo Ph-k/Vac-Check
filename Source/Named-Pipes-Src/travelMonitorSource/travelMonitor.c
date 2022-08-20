@@ -9,42 +9,40 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/types.h>
-#include "../Communicator.h"
-#include "./travelController.h"
-#include "../Utilities/Utilities.h"
-#include "../DataStructures/HashTable.h"
+#include "Communicator.h"
+#include "Utilities.h"
+#include "HashTable.h"
+#include "travelController.h"
+#include "travelSignalHandlers.h"
 
 int main(int argc, char **argv){
-    if(argc!=13) {printf("Travel monitor: check arguments format!\n"); return -1;}
+    if(argc!=9) {printf("Travel monitor: check arguments format!\n"); return -1;}
 
-    int i,numMonitors = -1, bloomSize = -1, numThreads = -1;
-    unsigned int socketBufferSize = 0, cyclicBufferSize = 0;
+    setSignalHandlers();
+
+    int i,numMonitors = -1, bloomSize = -1;
+    unsigned int bufferSize = 0;
     char *input_dir=NULL;
 
     for(i=1; i<argc; i++){//Reading all the given arguments
         if( strcmp(argv[i],"-m") == 0 ){
             numMonitors = atoi(argv[++i]);
         }else if( strcmp(argv[i],"-b") == 0){
-            socketBufferSize = atoi(argv[++i]);
+            bufferSize = atoi(argv[++i]);
         }else if( strcmp(argv[i],"-s") == 0){
             bloomSize = atoi(argv[++i]);
         }else if( strcmp(argv[i],"-i") == 0){
             input_dir = argv[++i];
-        }else if( strcmp(argv[i],"-c") == 0){
-            cyclicBufferSize = atoi(argv[++i]);
-        }else if( strcmp(argv[i],"-t") == 0){
-            numThreads = atoi(argv[++i]);
         }else{
             printf("Argument '%s' is invalid\n",argv[i]);
         }
     }
 
-    if(numMonitors<=0 || socketBufferSize<=0 || bloomSize<=0 || cyclicBufferSize <=0 || numThreads <=0 || input_dir==NULL){
+    if(numMonitors<=0 || bufferSize<=0 || bloomSize<=0 || input_dir==NULL){
 		printf("One or many of the program parameters was mistyped or not given at all!\n");
 		return -2;
 	}
-    printf("Parameters: numMonitors=%d socketBufferSize=%u sizeOfBloom=%d cyclicBufferSize=%d input_dir=%s numThreads=%d\n",
-           numMonitors, socketBufferSize, bloomSize, cyclicBufferSize, input_dir, numThreads);
+    printf("Parameters: numMonitors=%d bufferSize=%u sizeOfBloom=%d input_dir=%s\n", numMonitors, bufferSize, bloomSize, input_dir);
 
     // Checking if the input_dir exists and is accessible
     DIR *rootDir = opendir(input_dir);
@@ -65,7 +63,7 @@ int main(int argc, char **argv){
     closedir(rootDir);
 
     // This function initializes all needed data structures, and creates the monitor processes along with the needed communication pipes
-    initializeProgramMonitors(input_dir, numMonitors, bloomSize, socketBufferSize, cyclicBufferSize ,numThreads);
+    initializeProgramMonitors(input_dir, numMonitors, bloomSize, bufferSize);
 
     // After the initialazation of the travelMonnitor/parrent, the monitos/children have to send the bloom filters
     recieveBloomFilters(numMonitors, bloomSize);
@@ -75,14 +73,33 @@ int main(int argc, char **argv){
 	*inputBuffer = malloc(sizeof(char) * maxInputStingSize)
 
     // As you might have seen on the readme, there are two ways in which the program can terminate
-    // The dafault is the "restfull", as described in the assignment, all the child processes are told to terminate 
-    // via a socket message, after they writing some data to their logfiles, and freeing all their memory.
-    // The "violent" way "kills" all the children with the sigkill signal (violentlyExit command), more on readme
-    ,exitMethod = RESTFULLY;
+    // The dafault is the "violent", as described in the assignment, all the child processes are killed once the exit is given
+    // The "restfull" way tells the children to free their memory terminate (restfullyExit command), more on readme
+    ,exitMethod = VIOLENTLY;//
 
     while( execution == 1 ){// The programs main and command execution starts and ends in this loop
 		printf("\x1B[32m>/\x1B[37m");// '>/' is printed in green (all the other characters are ansi color codes)
 		getline(&inputBuffer,&maxInputStingSize,stdin);//Reading user input
+
+        //Checking if any signals were recieved from the parrent
+        if(SigChld_Flag > 0){
+            printf("I have recieved a child sig");//delete
+            //This functions check wich processes have terminated, and returns the number of processes it "revived"
+            SigChld_Flag -= checkMonitorsExistance();
+            printf(" (%d left)\n",SigChld_Flag);//delete
+            //Clearing the input string, and the input buffer from errors occured from the signal arival
+            memset(inputBuffer,'\0',maxInputStingSize);
+            clearerr(stdin);
+            continue;
+        }
+        if(SigIntQuit_Flag>0){
+            printf("I have recieved a int/quit sig");//delete
+            SigIntQuit_Flag=0;
+            printf(" (%d left)\n",SigChld_Flag);//delete
+            execution=0;//The parrent will terminate "violently"
+            clearerr(stdin);
+            break;
+        }
 
 		command = strtok(inputBuffer, " ");// Getting first argument of user input, the command
 		
@@ -157,9 +174,9 @@ int main(int argc, char **argv){
 		}else if( strncmp(command,"exit",4) == 0 ){
 			//The program is terminated the default/"violent" way by breaking out of the execution loop
 			execution =  0;
-		}else if( strncmp(command,"violentlyExit",4) == 0 ){
-			//The program is terminated the "violently" way by breaking out of the execution loop and changing the exiy method
-            exitMethod = VIOLENTLY;
+		}else if( strncmp(command,"restfullyExit",4) == 0 ){
+			//The program is terminated the "restfull" way by breaking out of the execution loop and changing the exiy method
+            exitMethod = RESTFULLY;
 			execution =  0;
 		}else{
 			printf("Unvalid command (%s)!\n",command);

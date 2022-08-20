@@ -1,19 +1,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../DataStructures/HashTable.h"
-#include "../Utilities/Utilities.h"
-#include "../Entities/Abacus.h"
+#include "HashTable.h"
+#include "Utilities.h"
+#include "Abacus.h"
 
-// In order to count the request and access them in retavely fast way
+// In order to count the request and access them in retavely fat way
 
 // The requests in the last stage are grouped by virus,
 typedef struct virusWabacus{
     char* virusName;
-    Abacus *virusRequestsCounter;// And a counter for all the different vaccination dates
+    Abacus *virusRequestsCounter;// and a counter for all the different vaccination dates
 } virusWabacus;
 
-// These functions are wrapping the above structure to be fit in a HT
+// These functioin are wrapping the above structure to be fit in a HT
 
 virusWabacus* newVirus(char* virusName, int HTSize){
     virusWabacus *c = malloc(sizeof(virusWabacus));
@@ -75,7 +75,7 @@ void deleteCountry(void *c){
     free(coun);
 }
 
-// And finaly, a countries register for the travelStats has
+// And finay, a countries register for the travelStats has
 typedef struct countriesRegister{
     hashTable *countries; // A has table to save all the different countries
     int HTSize;
@@ -160,7 +160,7 @@ int getCounts(countriesRegister *cr, char *virusName, char *date1, char *date2, 
         // If a virus name has speciefied, we simply count its values
         if(virusName != NULL){
             virusWabacus* vir = hashFind(((country*)coun)->virusRequests,virusName);
-            if(vir == NULL) {printf("no such virus (%s)\n",virusName); return;}
+            if(vir == NULL) {printf("no such virus\n"); return;}
             virusValues(vir,args);
         }else{
             // If no virus names was spacyfied we count everything for the given country

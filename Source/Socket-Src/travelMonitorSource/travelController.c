@@ -9,16 +9,16 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/types.h>
-#include "../Communicator.h"
+#include "Communicator.h"
 #include "virusBloomFilters.h"
 #include "travelController.h"
 #include "countriesRegister.h"
-#include "../Entities/Person.h"
-#include "../Entities/StringDict.h"
-#include "../Utilities/Utilities.h"
-#include "../Utilities/LogFileWritter.h"
-#include "../DataStructures/HashTable.h"
-#include "../DataStructures/BloomFilter.h"
+#include "Person.h"
+#include "StringDict.h"
+#include "Utilities.h"
+#include "LogFileWritter.h"
+#include "HashTable.h"
+#include "BloomFilter.h"
 
 // This struct holds all the necessary information of one monitor proecess
 typedef struct Monitor{

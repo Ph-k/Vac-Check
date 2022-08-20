@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include "Person.h"
 #include "StringDict.h"
-#include "../Communicator.h"
+#include "Communicator.h"
 
 // Creates a new person
 // (the countries dict is used in order to avoid having the same information saved more than once in the program)

@@ -1,13 +1,10 @@
 CC = gcc
-cflags = -Wall -g3
-
-includePaths = -I$(travelObjectsLocation) -I$(monitorObjectsLocation) -I$(communicatorObjectLocation) -I$(UtilitiesLocation) -I$(EntitiesLocation) -I$(DataStructuresLocation)
-
-# Location for the implimentation source code which uses pipes
-sourcePath = ./Named-Pipes-Src/
 
 # Location for the source code which is used from both implimentations
-commonSourcePath = ./Common-Src/
+commonSourcePath = ../Common-Src/
+
+# Location for the implimentation source code which uses pipes
+sourcePath = ./
 
 # named pipe implimentation objects
 travelObjectsLocation = $(sourcePath)travelMonitorSource/
@@ -29,8 +26,12 @@ EntitiesObjects = $(EntitiesLocation)Person.o $(EntitiesLocation)Virus.o $(Entit
 DataStructuresLocation = $(commonSourcePath)DataStructures/
 DataStructuresObjects = $(DataStructuresLocation)HashTable.o $(DataStructuresLocation)BitArrey.o $(DataStructuresLocation)BloomFilter.o $(DataStructuresLocation)SkipList.o
 
-
 utilityObjects = $(communicatorObject) $(DataStructuresObjects) $(EntitiesObjects) $(UtilitiesObjects)
+
+includePaths = -I$(travelObjectsLocation) -I$(monitorObjectsLocation) -I$(communicatorObjectLocation) -I$(UtilitiesLocation) -I$(EntitiesLocation) -I$(DataStructuresLocation)
+
+
+cflags = -Wall -g3 $(includePaths)
 
 pflafs = -m 5 -b 10 -c 4 -s 100000 -i ./countriesData -t 4
 
@@ -40,9 +41,50 @@ monitorProgram = monitorServer
 scriptName = create_infiles.sh
 scriptLocation = ./
 
-$(mainProgram): $(travelObjects) $(commonObjects) $(monitorProgram)
-	$(CC) $(cflags) $(travelObjects) $(commonObjects) -o $(mainProgram)
+$(mainProgram): $(travelObjects) $(utilityObjects) $(monitorProgram)
+	$(CC) $(cflags) $(travelObjects) $(utilityObjects) -o $(mainProgram)
 
-$(monitorProgram): $(monitorObjects) $(commonObjects)
-	$(CC) $(cflags) $(monitorObjects) $(commonObjects) -o $(monitorProgram) -lpthread
+$(monitorProgram): $(monitorObjects) $(utilityObjects)
+	$(CC) $(cflags) $(monitorObjects) $(utilityObjects) -o $(monitorProgram) -lpthread
 
+# mainObjects
+$(sourcePath)%.o: $(sourcePath)%.c $(sourcePath)%.h
+	$(CC) $(cflags) -c $< -o $@
+
+#travelObjects
+$(travelObjectsLocation)%.o: $(travelObjectsLocation)%.c
+	$(CC) $(cflags) -c $< -o $@
+
+#travelObjects
+$(monitorObjectsLocation)%.o: $(monitorObjectsLocation)%.c
+	$(CC) $(cflags) -c $< -o $@
+
+#Entities
+$(EntitiesLocation)%.o: $(EntitiesLocation)%.c $(EntitiesLocation)%.h
+	$(CC) $(cflags) -c $< -o $@
+
+#Utilities
+$(DataStructuresLocation)%.o: $(DataStructuresLocation)%.c $(DataStructuresLocation)%.h
+	$(CC) $(cflags) -c $< -o $@
+
+#Utilities
+$(UtilitiesLocation)%.o: $(UtilitiesLocation)%.c $(UtilitiesLocation)%.h
+	$(CC) $(cflags) -c $< -o $@
+
+run: $(mainProgram)
+	./$(mainProgram) $(pflafs)
+
+val: $(mainProgram)
+	valgrind --trace-children=yes --track-origins=yes --show-leak-kinds=all --leak-check=full ./$(mainProgram) $(pflafs)
+
+gdb: $(mainProgram)
+	gdb ./$(mainProgram)
+
+countryFolders: $(scriptLocation)$(scriptName)
+	cd $(scriptLocation); ./$(scriptName) inputFile.txt countriesData 5
+
+clean:
+	rm -f $(travelObjects) $(utilityObjects) $(monitorProgram) $(monitorObjects) $(mainProgram)
+
+cleanFifos:
+	rm -f ./Fifos/*

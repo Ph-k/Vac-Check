@@ -1,13 +1,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include "../DataStructures/BloomFilter.h"
-#include "../DataStructures/HashTable.h"
-#include "./monitorController.h"
-#include "../Utilities/Utilities.h"
+#include "BloomFilter.h"
+#include "HashTable.h"
+#include "monitorController.h"
+#include "Utilities.h"
 
 // Given a file with initialization data, the function reads it, and inserts the valid records, printing any error messages
-int citizensFileReader(char* filename, pthread_mutex_t *mutexes){
+int citizensFileReader(char* filename){
 	FILE *fp = fopen(filename,"r"); //Opening file for reading only
 	
 	if (fp == NULL) return -1; //If file does not exist error code is returned
@@ -56,7 +56,7 @@ int citizensFileReader(char* filename, pthread_mutex_t *mutexes){
 		}
 
 		// If the record was valid, the new citizen is inserted (more on what silentInsert does, on controller.c)
-		temp = silentInsert(Id,lastName,firstName,country,age,virusName,vaccinated,date,mutexes);
+		temp = silentInsert(Id,lastName,firstName,country,age,virusName,vaccinated,date);
 		inconsistencies = 0;
 		if( temp == -3 ){// If the insertion was not succesfull, the record had an error, -3 means the record exists
 			if(inconsistencies<10){

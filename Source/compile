@@ -1,0 +1,11 @@
+#!/bin/bash
+
+if [ "$1" = "pipes" ]
+then
+   cd ./Named-Pipes-Src && make "${@:2}"
+elif [ "$1" = "sockets" ]
+then
+	cd ./Socket-Src && make "${@:2}"
+else
+   echo "Invalid '$1' option. Please choose one of: pipes, sockets"
+fi

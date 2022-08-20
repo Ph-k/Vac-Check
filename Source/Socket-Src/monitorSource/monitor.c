@@ -6,11 +6,11 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include "./fileReader.h"
-#include "../Communicator.h"
-#include "../Entities/Virus.h"
-#include "./monitorController.h"
-#include "../Utilities/Utilities.h"
+#include "fileReader.h"
+#include "Communicator.h"
+#include "Virus.h"
+#include "monitorController.h"
+#include "Utilities.h"
 
 // The maximum length of a command given from the travel client through the socket
 #define MAX_INPUT_BUFFER 250

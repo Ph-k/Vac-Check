@@ -1,8 +1,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "../DataStructures/HashTable.h"
-#include "../Utilities/Utilities.h"
+#include "HashTable.h"
+#include "Utilities.h"
 
 
 // Wrapper functions needed to use the hash table

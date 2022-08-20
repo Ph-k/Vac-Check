@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../DataStructures/HashTable.h"
-#include "../Utilities/Utilities.h"
-#include "../Entities/Abacus.h"
+#include "HashTable.h"
+#include "Utilities.h"
+#include "Abacus.h"
 
 // In order to count the request and access them in retavely fast way
 
