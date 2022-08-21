@@ -1,3 +1,4 @@
+/* Code from https://github.com/Ph-k/Vac-Check. Philippos Koumparos (github.com/Ph-k)*/
 // Provides a structure to save all the files a country directory has
 typedef struct countryDirectory countryDirectory;
 

@@ -1,3 +1,4 @@
+/* Code from https://github.com/Ph-k/Vac-Check. Philippos Koumparos (github.com/Ph-k)*/
 // Given the process id and a message. It is writen to the log file named log.xxx where xxx the pid
 int writeToLog(char* string);
 

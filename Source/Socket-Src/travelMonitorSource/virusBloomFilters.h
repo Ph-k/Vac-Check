@@ -1,3 +1,4 @@
+/* Code from https://github.com/Ph-k/Vac-Check. Philippos Koumparos (github.com/Ph-k)*/
 typedef struct virusBloomFilter virusBloomFilter;
 
 // The travel monitor needs a way of organazing the bloom filters of all the viruses

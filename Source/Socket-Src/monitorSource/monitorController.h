@@ -1,3 +1,4 @@
+/* Code from https://github.com/Ph-k/Vac-Check. Philippos Koumparos (github.com/Ph-k)*/
 typedef struct Communicator Communicator;
 
 int initilizeMonitor(int port,int numThreads,int cyclicBufferCount, unsigned int bloomSize, char** countryArgs, unsigned int socketBufferSize, Communicator **mainCommunicatorPointer);

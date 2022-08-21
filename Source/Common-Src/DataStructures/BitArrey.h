@@ -1,3 +1,4 @@
+/* Code from https://github.com/Ph-k/Vac-Check. Philippos Koumparos (github.com/Ph-k)*/
 typedef struct bit_arrreyS bit_arrreyS; //Declaretion
 
 // Creates the bit arrey structure

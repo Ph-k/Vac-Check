@@ -1,3 +1,4 @@
+/* Code from https://github.com/Ph-k/Vac-Check. Philippos Koumparos (github.com/Ph-k)*/
 int initializeProgramMonitors(char* input_dir, int numMonitors, int bloomSize, unsigned int bufferSize,unsigned int cyclicBufferSize ,int numThreads);
 int recieveBloomFilters(int numMonitors, int bloomSize);
 

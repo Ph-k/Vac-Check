@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Code from https://github.com/Ph-k/Vac-Check. Philippos Koumparos (github.com/Ph-k)
+
 #This function takes a filename as an argument and checks if the script can work with it
 function checkFile(){
 	if [ ! -e $1 ]

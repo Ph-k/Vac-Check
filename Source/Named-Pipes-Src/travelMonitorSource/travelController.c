@@ -1,3 +1,4 @@
+/* Code from https://github.com/Ph-k/Vac-Check. Philippos Koumparos (github.com/Ph-k)*/
 #include <poll.h>
 #include <stdio.h>
 #include <errno.h>

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Code from https://github.com/Ph-k/Vac-Check. Philippos Koumparos (github.com/Ph-k)
+
 if [ "$1" = "pipes" ]
 then
 

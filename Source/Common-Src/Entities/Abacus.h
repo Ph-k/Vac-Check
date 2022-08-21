@@ -1,3 +1,4 @@
+/* Code from https://github.com/Ph-k/Vac-Check. Philippos Koumparos (github.com/Ph-k)*/
 #pragma once
 
 /*An abacus is purpuse build structure for the needs of the travelstats command.

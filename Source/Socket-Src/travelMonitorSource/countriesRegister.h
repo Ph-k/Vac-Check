@@ -1,3 +1,4 @@
+/* Code from https://github.com/Ph-k/Vac-Check. Philippos Koumparos (github.com/Ph-k)*/
 typedef struct countriesRegister countriesRegister;
 
 // This entity impliments the counter for the travelStats command

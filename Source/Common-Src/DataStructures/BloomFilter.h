@@ -1,3 +1,4 @@
+/* Code from https://github.com/Ph-k/Vac-Check. Philippos Koumparos (github.com/Ph-k)*/
 typedef struct BloomFilter BloomFilter; // Declaretion of bloom fiter structure
 
 // Function that creates a bloom filter of size bits
