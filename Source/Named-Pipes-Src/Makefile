@@ -1,5 +1,7 @@
 CC = gcc
 
+# Code from https://github.com/Ph-k/Vac-Check. Philippos Koumparos (github.com/Ph-k)
+
 # Location for the source code which is used from both implimentations
 commonSourcePath = ../Common-Src/
 
@@ -33,10 +35,10 @@ includePaths = -I$(travelObjectsLocation) -I$(monitorObjectsLocation) -I$(commun
 
 cflags = -Wall -g3 $(includePaths)
 
-pflafs = -m 5 -b 10 -s 100000 -i ./countriesData
+pflafs = -m 5 -b 10 -s 100000 -i ../../Input-Files/countriesData
 
-mainProgram = travelMonitor
-monitorProgram = monitor
+mainProgram = VacCheck
+monitorProgram = VacCheck_monitor
 
 scriptName = create_infiles.sh
 scriptLocation = ./

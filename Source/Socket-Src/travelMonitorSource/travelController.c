@@ -21,6 +21,9 @@
 #include "HashTable.h"
 #include "BloomFilter.h"
 
+// Name of the monitor server executable
+static const char* monitorServerExecutable = "./VacCheck_monitor";
+
 // This struct holds all the necessary information of one monitor proecess
 typedef struct Monitor{
     Communicator* communicator; // A communicator which uses pipes for bi-directonal communication
@@ -54,7 +57,7 @@ pid_t spawnMonitor(int port, int numThreads, unsigned int cyclicBufferSize , uns
         // Allocating an arrey big enough to fit the 12 standard arguments and the file path args
         args = malloc( sizeof(char*)*(12+countriesCount) );
 
-        args[0] = strdup("./monitorServer");
+        args[0] = strdup(monitorServerExecutable);
 
         //port arg
         args[1] = strdup("-p");
@@ -104,7 +107,7 @@ pid_t spawnMonitor(int port, int numThreads, unsigned int cyclicBufferSize , uns
         args[dummyArgs.index] = NULL;
 
         // Child exec part, the adress spaces of the program is overwritten with a monitor process
-        execv("./monitorServer",args);
+        execv(monitorServerExecutable,args);
 
         // If the program counter gets here, exec went wrong. Doing some memory cleanup
         for(int i=0; i<12; i++)

@@ -24,6 +24,9 @@
 // The program default location of the fifo files
 static const char FIFOS_DIR[] = "./Fifos/";
 
+// Name of the monitor server executable
+static const char* monitorServerExecutable = "./VacCheck_monitor";
+
 // This struct holds all the necessary information of one monitor proecess
 typedef struct Monitor{
     Communicator* communicator; // A communicator which uses pipes for bi-directonal communication
@@ -49,7 +52,7 @@ pid_t spawnMonitor(char* fifoPath){
     pid_t id = fork();
     if(id==0){
         // Child fork part, the adress spaces of the program is overwritten with a monitor process
-        execl("./monitor","./monitor",fifoPath,NULL);
+        execl(monitorServerExecutable,monitorServerExecutable,fifoPath,NULL);
         // If the program counter gets here, exec went wrong
         perror("exec() failed!");
         exit(-2);
