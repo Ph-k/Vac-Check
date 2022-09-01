@@ -25,3 +25,68 @@ As you will quickly notice below, there are **two** different implementations of
 **The first implementation** uses named pipes to communicate with the parent. The initialization of the program from the input directories is done concurrently from the monitors.
 
 **The second implementation** uses sockets to communicate with the parent. The initialization of the program from the input directories is done concurrently from the monitors. And the initialization of the data from the files is done in parallel from the threads of each monitor process.
+
+
+# Project compilation
+
+In the Source directory you will find the `compile.sh` bash script which can compile the implementation of your choice by executing its makefile. The resulting executables `VacCheck` and `VacCheck_monitor` will be found in the implementations source directory *(`Named-Pipes-Src` or ` Socket-Src `)*.
+
+`compile.sh` usage:
+- `./compile.sh pipes` to compile the pipe implementation.
+- `./compile.sh sockets` to compile the sockets implementation.
+- `./compile.sh both` to compile the both of the implementations.
+- `./compile.sh clean` to remove all the object and executable files for both implementations.
+
+*The program was tested on Debian based linux distros, but all linux/unix machines running the gcc compiler are supported.*
+
+
+# VacCheck usage
+
+## Pipe implementation usage
+
+The program can be executed from a cli as `./VacCheck –m numMonitors -b bufferSize -s sizeOfBloom -i input_dir` where:
+
+- VacCheck: is the executable of the project
+
+- numMonitors: the number of monitor processes to be spawned and used.
+
+- bufferSize: the size of the buffer that will be used to send information through the pipes.
+
+- sizeOfBloom: sets the size of the bloomfilter *in bytes*.
+
+- input_dir: is the directory which contains the input files hierarchy split in countries.
+
+The input_dir must have the following form:
+```
+input_dir 
+└───Greece
+│   │   Greece-1.txt
+│   │   Greece-2.txt
+|
+└───France
+│   │   France-1.txt
+│   │   France-2.txt
+│   │   France-3.txt
+│   
+└───Germany
+|   │   Germany-1.txt
+|   │   Germany-2.txt
+|   │   Germany-3.txt
+```
+
+## Socket implementation usage
+The program can be executed from a cli as `./VacCheck –m numMonitors -b socketBufferSize -c cyclicBufferSize -s sizeOfBloom -i input_dir -t numThreads` where:
+
+- VacCheck: is the executable of the project
+
+- numMonitors: the number of monitor processes to be spawned and used.
+
+- socketBufferSize: the size of the buffer that will be used to send information through the sockets.
+
+- cyclicBufferSize: The size of a buffer *in entries, ex 10 file names* which is used from the threads to read which input files they will read.
+
+- sizeOfBloom: sets the size of the bloomfilter *in bytes*.
+
+- numThreads: the number of threads that will be created.
+
+- input_dir: is the directory which contains the input files hierarchy split in countries.
