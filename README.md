@@ -90,3 +90,25 @@ The program can be executed from a cli as `./VacCheck –m numMonitors -b socket
 - numThreads: the number of threads that will be created.
 
 - input_dir: is the directory which contains the input files hierarchy split in countries.
+
+# Program interface usage
+The program provides a tui to the user allowing him to interact with the information of the students. The tui instructions are the following:
+
+1. `/travelRequest citizenID date countryFrom countryTo virusName`:  Checks if the citizen with citizenID  has been vaccinated for the virusName virus, and outputs this information. This is done by first checking the bloom filter. If the bloom filter cannot assure us about the vaccination status of the citizen, VacCheck asks the monitor process responsible for the countryFrom country through pipes or sockets for the vaccination status and prints the current message *(note, a  citizen is vaccinated if he has been vaccinated for less than 6 months before his travel date)* 
+
+2. `/travelStats virusName date1 date2 [country]`: Outputs the total, accepted, and rejected number of vaccination-check requests between date1 and date2 for virusName. If a country is given, information about only this specific country is printed, otherwise the program prints statistics for all countries. *Date is in DD-MM-YYYY format*.
+
+3. `/addVaccinationRecords country`: This command can be used when the user has added an input file in the countries folder *(input_dir/country)*. The parent/VacCheck process informs the children/monitor process about the addition of a file using a USR1 signal, then the monitor updates its data structures and returns to the parent its updated bloom filter using pipe/socket.
+
+4. ` /searchVaccinationStatus citizenID`: Outputs all the vaccination information *(for which viruses he is or isn’t vaccinated)* the program has for the requested citizen. This is done from the parent/VacCheck process by sending to all the monitor processes via pipes/sockets this request, and then the monitor process responsible for the citizen with citizedID sends back via pipe/socket all the vaccination information it has about him.   
+
+5. `/printPids`: prints the process id’s of all the child/monitor processes.
+```
+| not the same for both impl
+V
+````
+6. ‘/exit’: send a signal to all the child/monitor processes which when received makes all the mointors to write some diagnostic information in their log files, de-allocate all the dynamically allocated memory, and then terminate. After all the monitor processes have terminated gracefully, VacCheck also de-allocates all its dynamically allocated memory and exits. 
+
+7. `/violentlyExit`: The parent/VacCheck process send a sig kill signal to all the child/monitor processes. NOTE: USE ONLY WHEN ABSOLITY NESSECERY, it is recommended that you always use the exit command. 
+
+
