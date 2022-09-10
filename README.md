@@ -103,11 +103,8 @@ The program provides a tui to the user allowing him to interact with the informa
 4. ` /searchVaccinationStatus citizenID`: Outputs all the vaccination information *(for which viruses he is or isn’t vaccinated)* the program has for the requested citizen. This is done from the parent/VacCheck process by sending to all the monitor processes via pipes/sockets this request, and then the monitor process responsible for the citizen with citizedID sends back via pipe/socket all the vaccination information it has about him.   
 
 5. `/printPids`: prints the process id’s of all the child/monitor processes.
-```
-| not the same for both impl
-V
-````
-6. ‘/exit’: send a signal to all the child/monitor processes which when received makes all the mointors to write some diagnostic information in their log files, de-allocate all the dynamically allocated memory, and then terminate. After all the monitor processes have terminated gracefully, VacCheck also de-allocates all its dynamically allocated memory and exits. 
+
+6. `/exit`: send a signal to all the child/monitor processes which when received makes all the mointors to write some diagnostic information in their log files, de-allocate all the dynamically allocated memory, and then terminate. After all the monitor processes have terminated gracefully, VacCheck also de-allocates all its dynamically allocated memory and exits. 
 
 7. `/violentlyExit`: The parent/VacCheck process send a sig kill signal to all the child/monitor processes. NOTE: USE ONLY WHEN ABSOLITY NESSECERY, it is recommended that you always use the exit command. 
 
