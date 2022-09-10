@@ -170,3 +170,4 @@ Only for ‘Source/Named-Pipes-Src/VacCheckSource’:
 
 - `Utilities.c/h`: Contains some auxiliary functions, mainly for string manipulation.
 
+# Useful notes:
