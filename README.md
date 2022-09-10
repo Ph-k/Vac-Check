@@ -152,11 +152,11 @@ Only for ‘Source/Named-Pipes-Src/VacCheckSource’:
 
 ` Source/Common-Src/DataStructures`: All these modules are utility pseudo data structures. *(pseudo because they are mostsly wrapper functions for the above data structures).
 
--`Abacus.c/h` using the hashtable, it maintains a number of date counters which can be changed and accessed on O(1). Very useful in the travelStats command.
+- `Abacus.c/h` using the hashtable, it maintains a number of date counters which can be changed and accessed on O(1). Very useful in the travelStats command.
 
--`StringDict.c/h`: Using the hash table implementation, it simply is a string dictionary which helps the program to eliminate any memory repletion of string data.
+- `StringDict.c/h`: Using the hash table implementation, it simply is a string dictionary which helps the program to eliminate any memory repletion of string data.
 
--`Person.c/h`: Simulates a person entity, while taking care for the memory allocation and deallocation of him (name strings etc). Also provide functions to send his/her information over pipes or sockets *sendPerson()* & *recievePerson()*.
+- `Person.c/h`: Simulates a person entity, while taking care for the memory allocation and deallocation of him (name strings etc). Also provide functions to send his/her information over pipes or sockets *sendPerson()* & *recievePerson()*.
 
 - `Virus.c.h`: Simulates a virus entity. Similarly to the person one.
 
