@@ -6,7 +6,7 @@ A distributed vaccination status monitor written in C which uses pipes *or* sock
 
 ## Project description:
 
-The Vac-Check (**Vac**cination **Check**er) project is a distributed tool which performs queries regarding the vaccination status of citizens for a plethora of viruses using multiple data structures. For that reason, the root process of the project, Vac-Check spawns monitor processes with which it communicates.
+The Vac-Check (**Vac**cination **Check**er) project is a distributed tool which performs queries regarding the vaccination status of different countries citizens for a plethora of viruses using multiple data structures. For that reason, the root process of the project, Vac-Check spawns monitor processes with which it communicates.
 
 #### What does Vac-Check *(the parent process)* do:
 
@@ -16,7 +16,7 @@ Note that to maximize efficiency and minimize the number of queries that need to
 
 #### What do the monitor *(child processes)* do:
 
-As mentioned, the monitor processes are responsible for holding the vaccination records of a plethora of citizens for several o countries. The information of the records is organized by viruses and saved in two [skip lists](https://en.wikipedia.org/wiki/Skip_list), one for vaccinated citizens and one for unvaccinated citizens. The organization of the viruses (and their respective skip lists) is done using hash tables.
+As mentioned, the monitor processes are responsible for holding the vaccination records of a plethora of citizens for several countries. The information of the records is organized by viruses and saved in two [skip lists](https://en.wikipedia.org/wiki/Skip_list), one for vaccinated citizens and one for unvaccinated citizens. The organization of the viruses (and their respective skip lists) is done using hash tables.
 
 ### Inter process communication & different implementations of the project:
 
@@ -56,24 +56,6 @@ The program can be executed from a cli as `./VacCheck –m numMonitors -b buffer
 
 - input_dir: is the directory which contains the input files hierarchy split in countries.
 
-The input_dir must have the following form:
-```
-input_dir 
-└───Greece
-│   │   Greece-1.txt
-│   │   Greece-2.txt
-|
-└───France
-│   │   France-1.txt
-│   │   France-2.txt
-│   │   France-3.txt
-│   
-└───Germany
-|   │   Germany-1.txt
-|   │   Germany-2.txt
-|   │   Germany-3.txt
-```
-
 ## Socket implementation usage
 The program can be executed from a cli as `./VacCheck –m numMonitors -b socketBufferSize -c cyclicBufferSize -s sizeOfBloom -i input_dir -t numThreads` where:
 
@@ -91,6 +73,29 @@ The program can be executed from a cli as `./VacCheck –m numMonitors -b socket
 
 - input_dir: is the directory which contains the input files hierarchy split in countries.
 
+### About the input_dir
+
+You can create some input file hierarchies by following the instructions for the according bash scripts in the [Input-Files directory](https://github.com/Ph-k/Vac-Check/tree/main/Input-Files).
+
+In any case, the input_dir must have the following form:
+
+```
+input_dir 
+└───Greece
+│   │   Greece-1.txt
+│   │   Greece-2.txt
+|
+└───France
+│   │   France-1.txt
+│   │   France-2.txt
+│   │   France-3.txt
+│   
+└───Germany
+|   │   Germany-1.txt
+|   │   Germany-2.txt
+|   │   Germany-3.txt
+```
+
 # Program interface usage
 The program provides a tui to the user allowing him to interact with the information of the students. The tui instructions are the following:
 
@@ -104,7 +109,7 @@ The program provides a tui to the user allowing him to interact with the informa
 
 5. `/printPids`: prints the process id’s of all the child/monitor processes.
 
-6. `/exit`: send a signal to all the child/monitor processes which when received makes all the mointors to write some diagnostic information in their log files, de-allocate all the dynamically allocated memory, and then terminate. After all the monitor processes have terminated gracefully, VacCheck also de-allocates all its dynamically allocated memory and exits. 
+6. `/exit`: send a signal/message to all the child/monitor processes which when received makes all the mointors to write some diagnostic information in their log files, de-allocate all the dynamically allocated memory, and then terminate. After all the monitor processes have terminated gracefully, VacCheck also de-allocates all its dynamically allocated memory and exits. 
 
 7. `/violentlyExit`: The parent/VacCheck process send a sig kill signal to all the child/monitor processes. NOTE: USE ONLY WHEN ABSOLITY NESSECERY, it is recommended that you always use the exit command. 
 
