@@ -111,4 +111,60 @@ V
 
 7. `/violentlyExit`: The parent/VacCheck process send a sig kill signal to all the child/monitor processes. NOTE: USE ONLY WHEN ABSOLITY NESSECERY, it is recommended that you always use the exit command. 
 
+# Source code files overview 
+#### (For both implementations *Named-Pipes-Src & Socket-Src*)
+
+**‘Source/*impl src*/VacCheckSource’ directory:**
+
+- ‘travelMonitor.c’: This file contains the main() function and provides the tui of the program. The utility of the tui is achieved by calling the according functions from the `travelController.c` module.
+
+- ` travelController.c/h`: Every command of the project is basically implemented in a C function which does all the necessary inter process communication, data structure manipulation, searching etc. All these functions can be found here, providing a level of abstraction between the program’s utilities called from the main and the actual data structure manipulation.
+
+- `countriesRegister.c/h`: Using multiple hash tables, it groups travel requests by country or virus and uses an abacus data structure to keep record of the request dates. It also provides functions to access the above information easily.
+
+- ` virusBloomFilters.c/h`: As already mentioned the bloom fileters are grouped by viruses. This exact “grouping” of the bloom filter is implemented in this module.
+
+Only for ‘Source/Named-Pipes-Src/VacCheckSource’:
+
+- ` travelSignalHandlers.c/h`: The named pipe implementation also using pipes for its intra-process communication. This module implements all the necessary signal handlers using the according system calls. Note that for the handlers to be as small in execution as possible, they just change several flags, which the controller checks when he is gets executed again.
+
+**‘Source/*impl src*/VacCheckMonitorSource’ directory:**
+
+- `Monitor.c`: This file contains the main() function of the monitor processes. It does all the necessary file reading and data structure initialization and then wait for the VacCheck process to request a query from the pipe or socket.
+
+- `monitorController.c/.h` & `monitorSignalHandlers.c/.h`: do the exact same thing as their VacCheck counterparts, but customized for the needs of the monitor processes.
+
+- `fileReader.c/.h`: Provides the program with the necessary functions to read data from the input directory structure.
+
+- ` CountryDirectory.c/.h`: A pseudo data structure that uses the generic hash table implementation to save which files/country folders the program has already read.
+
+**Source code used form both implimentations *` Source/Common-Src`*:**
+
+` Source/Common-Src/DataStructures`: In here there are the necessary data structures implementations for the following data structures.
+
+- A bit array `BitArrey.c/h`
+
+- A BloomFilter ‘BloomFilter.c/h’ *( uses the bit arrey)*
+
+- A skip list ‘SkipList.c’, *with custom data manipulation functions for the needs of the project*.
+
+- And a generic extensible hash table `HashTable.c/h`.
+
+` Source/Common-Src/DataStructures`: All these modules are utility pseudo data structures. *(pseudo because they are mostsly wrapper functions for the above data structures).
+
+-`Abacus.c/h` using the hashtable, it maintains a number of date counters which can be changed and accessed on O(1). Very useful in the travelStats command.
+
+-`StringDict.c/h`: Using the hash table implementation, it simply is a string dictionary which helps the program to eliminate any memory repletion of string data.
+
+-`Person.c/h`: Simulates a person entity, while taking care for the memory allocation and deallocation of him (name strings etc). Also provide functions to send his/her information over pipes or sockets *sendPerson()* & *recievePerson()*.
+
+- `Virus.c.h`: Simulates a virus entity. Similarly to the person one.
+
+` Source/Common-Src/Utilities`:
+
+- `LogFileWriter.c/h`: Provides functions to write data to log files.
+
+- `HashFunctions.c/h`: Contains some non-trivial hashing functions used by the bloom filter implementation.
+
+- `Utilities.c/h`: Contains some auxiliary functions, mainly for string manipulation.
 
