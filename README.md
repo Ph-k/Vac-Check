@@ -114,9 +114,14 @@ V
 # Source code files overview 
 #### (For both implementations *Named-Pipes-Src & Socket-Src*)
 
+**`Communicator.c/h`**: Provides all the functionality an inter-process communication channel should provide *(creating & destroying a pipe or socket, sending & receiving data through the pipe or socket)*. 
+- For the named pipes implementation two opposite pipes are used per monitor process for the communication with the parent. 
+- For the socket implementation, one socket per monitor process is used for the communication with the parent process.
+
+
 **‘Source/*impl src*/VacCheckSource’ directory:**
 
-- ‘travelMonitor.c’: This file contains the main() function and provides the tui of the program. The utility of the tui is achieved by calling the according functions from the `travelController.c` module.
+- `travelMonitor.c`: This file contains the main() function and provides the tui of the program. The utility of the tui is achieved by calling the according functions from the `travelController.c` module.
 
 - ` travelController.c/h`: Every command of the project is basically implemented in a C function which does all the necessary inter process communication, data structure manipulation, searching etc. All these functions can be found here, providing a level of abstraction between the program’s utilities called from the main and the actual data structure manipulation.
 
