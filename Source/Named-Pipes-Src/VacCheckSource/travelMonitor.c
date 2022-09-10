@@ -172,10 +172,10 @@ int main(int argc, char **argv){
 			}
         }else if( strncmp(command,"printPids",9) == 0 ){
 			printPids(); // Is an extra not requested command which prints the pids of all the processes (usefull for signals)
-		}else if( strncmp(command,"exit",4) == 0 ){
-			//The program is terminated the default/"violent" way by breaking out of the execution loop
+		}else if( strncmp(command,"violentlyExit",4) == 0 ){
+			//The program is terminated the "violent" way by breaking out of the execution loop
 			execution =  0;
-		}else if( strncmp(command,"restfullyExit",4) == 0 ){
+		}else if( strncmp(command,"exit",4) == 0 ){
 			//The program is terminated the "restfull" way by breaking out of the execution loop and changing the exiy method
             exitMethod = RESTFULLY;
 			execution =  0;
