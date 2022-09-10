@@ -9,10 +9,10 @@ commonSourcePath = ../Common-Src/
 sourcePath = ./
 
 # named pipe implimentation objects
-travelObjectsLocation = $(sourcePath)travelMonitorSource/
+travelObjectsLocation = $(sourcePath)VacCheckSource/
 travelObjects = $(travelObjectsLocation)travelMonitor.o $(travelObjectsLocation)virusBloomFilters.o $(travelObjectsLocation)travelController.o $(travelObjectsLocation)countriesRegister.o $(travelObjectsLocation)travelSignalHandlers.o
 
-monitorObjectsLocation = $(sourcePath)monitorSource/
+monitorObjectsLocation = $(sourcePath)VacCheckMonitorSource/
 monitorObjects =  $(monitorObjectsLocation)monitor.o $(monitorObjectsLocation)fileReader.o $(monitorObjectsLocation)monitorController.o $(monitorObjectsLocation)monitorSignalHandlers.o $(monitorObjectsLocation)CountryDirectory.o
 
 communicatorObjectLocation = $(sourcePath)
