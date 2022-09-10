@@ -104,7 +104,7 @@ The program provides a tui to the user allowing him to interact with the informa
 
 5. `/printPids`: prints the process id’s of all the child/monitor processes.
 
-6. `/exit`: send a signal to all the child/monitor processes which when received makes all the mointors to write some diagnostic information in their log files, de-allocate all the dynamically allocated memory, and then terminate. After all the monitor processes have terminated gracefully, VacCheck also de-allocates all its dynamically allocated memory and exits. 
+6. `/exit`: send a signal/message to all the child/monitor processes which when received makes all the mointors to write some diagnostic information in their log files, de-allocate all the dynamically allocated memory, and then terminate. After all the monitor processes have terminated gracefully, VacCheck also de-allocates all its dynamically allocated memory and exits. 
 
 7. `/violentlyExit`: The parent/VacCheck process send a sig kill signal to all the child/monitor processes. NOTE: USE ONLY WHEN ABSOLITY NESSECERY, it is recommended that you always use the exit command. 
 
