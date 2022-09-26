@@ -15,6 +15,8 @@
 #include "monitorController.h"
 #include "monitorSignalHandlers.h"
 
+#define INPUT_BUFF_SIZE 250
+
 int main(int argc, char **argv){
 	setSignalHandlers();
     if(argc!=2) {printf("monitor: check arguments format!\n"); return -1;}
@@ -22,7 +24,7 @@ int main(int argc, char **argv){
 	Communicator *c;
     initilizeMonitor(argv[1],&c);// Initializing the program data structures and the communacator pipes
 
-    unsigned int maxInputStingSize = 250;
+    unsigned int maxInputStingSize = INPUT_BUFF_SIZE;
     char execution = 1,*command,
 	*citizenID=malloc(sizeof(char)*maxInputStingSize),
 	*country=malloc(sizeof(char)*maxInputStingSize),
@@ -31,7 +33,7 @@ int main(int argc, char **argv){
 	*inputBuffer = malloc(sizeof(char) * maxInputStingSize);
 
     while( execution == 1 ){// In this loop the monitor executes commands the parent/travel monitor process requests
-		maxInputStingSize=250;
+		maxInputStingSize=INPUT_BUFF_SIZE;
 
 		// Checking signal flags, which change from the signal handlers
 		if(SigUsr1_Flag>0){
@@ -59,12 +61,12 @@ int main(int argc, char **argv){
 		if( strcmp(command,"travelRequest") == 0 ){
 
 			// Receiving citizenID parameter from travel monitor
-			maxInputStingSize=250;
+			maxInputStingSize=INPUT_BUFF_SIZE;
 			memset(citizenID,'\0',maxInputStingSize);
 			recieveMessage(c,citizenID,&maxInputStingSize);
 
 			// Receiving virusName parameter from travel monitor
-			maxInputStingSize=250;
+			maxInputStingSize=INPUT_BUFF_SIZE;
 			memset(virusName,'\0',maxInputStingSize);
 			recieveMessage(c,virusName,&maxInputStingSize);
 
@@ -83,7 +85,7 @@ int main(int argc, char **argv){
 
 		}else if( strcmp(command,"searchVaccinationStatus") == 0 ){
 			// Receiving citizenID parameter from travel monitor
-			maxInputStingSize=250;
+			maxInputStingSize=INPUT_BUFF_SIZE;
 			memset(citizenID,'\0',maxInputStingSize);
 			recieveMessage(c,citizenID,&maxInputStingSize);
 

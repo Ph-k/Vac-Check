@@ -16,6 +16,8 @@
 #include "travelController.h"
 #include "travelSignalHandlers.h"
 
+#define INPUT_BUFF_SIZE 250
+
 int main(int argc, char **argv){
     if(argc!=9) {printf("Travel monitor: check arguments format!\n"); return -1;}
 
@@ -69,7 +71,7 @@ int main(int argc, char **argv){
     // After the initialazation of the travelMonnitor/parrent, the monitos/children have to send the bloom filters
     recieveBloomFilters(numMonitors, bloomSize);
 
-    size_t maxInputStingSize = 250;// The maximum input length
+    size_t maxInputStingSize = INPUT_BUFF_SIZE;// The maximum input length
     char execution = 1,*command,*citizenID,*country,*date,*countryFrom,*countryTo,*virusName,*t1,*t2,
 	*inputBuffer = malloc(sizeof(char) * maxInputStingSize)
 

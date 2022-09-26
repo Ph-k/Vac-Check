@@ -182,14 +182,14 @@ Communicator* openMonitorCommunicator(char* name){
     // Opening read fifo
     c->readFifoFile = NULL;
     myStringCat(&(c->readFifoFile),c->name,"_1");
-    while(access(c->readFifoFile,F_OK) != 0 && errno != ENOENT ){usleep(500000);}//bad idea
+    while(access(c->readFifoFile,F_OK) != 0 && errno != ENOENT ){usleep(500000);}// Wait's for the fifo to be created (bad idea if the creation went wrong)
     c->readFifoFD = open(c->readFifoFile,O_RDONLY);
     if(c->readFifoFD==-1) {perror("Communicator open()"); free(c); return NULL;}
 
     // Opening write fifo
     c->writeFifoFile = NULL;
     myStringCat(&(c->writeFifoFile),c->name,"_2");
-    while(access(c->readFifoFile,F_OK) != 0 && errno != ENOENT ){usleep(500000);}//bad idea
+    while(access(c->readFifoFile,F_OK) != 0 && errno != ENOENT ){usleep(500000);}// Wait's for the fifo to be created (bad idea if the creation went wrong)
     c->writeFifoFD = open(c->writeFifoFile,O_WRONLY);
     if(c->writeFifoFD==-1) {perror("Communicator open()"); free(c); return NULL;}
 

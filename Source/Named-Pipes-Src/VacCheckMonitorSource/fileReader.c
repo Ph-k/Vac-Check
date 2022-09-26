@@ -7,13 +7,15 @@
 #include "monitorController.h"
 #include "Utilities.h"
 
+#define INPUT_BUFF_SIZE 50
+
 // Given a file with initialization data, the function reads it, and inserts the valid records, printing any error messages
 int citizensFileReader(char* filename){
 	FILE *fp = fopen(filename,"r"); //Opening file for reading only
 	
 	if (fp == NULL) return -1; //If file does not exist error code is returned
 	
-	char Id[50], lastName[50], firstName[50], country[50], virusName[50], vaccinatedString[4], date[30];
+	char Id[INPUT_BUFF_SIZE], lastName[INPUT_BUFF_SIZE], firstName[INPUT_BUFF_SIZE], country[INPUT_BUFF_SIZE], virusName[INPUT_BUFF_SIZE], vaccinatedString[4], date[30];
 
 	unsigned int age,inconsistencies=0;
 	int temp;
