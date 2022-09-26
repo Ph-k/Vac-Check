@@ -96,6 +96,8 @@ input_dir
 |   │   Germany-3.txt
 ```
 
+Where country-xx.txt follows the inputFile format found in [bash scripts documentation](https://github.com/Ph-k/Vac-Check/tree/main/Input-Files).
+
 # Program interface usage
 The program provides a tui to the user allowing him to interact with the information of the students. The tui instructions are the following:
 
@@ -176,3 +178,21 @@ Only for ‘Source/Named-Pipes-Src/VacCheckSource’:
 - `Utilities.c/h`: Contains some auxiliary functions, mainly for string manipulation.
 
 # Useful notes:
+<![endif]-->
+
+- The socket implementation uses the ports starting from port 1234 to 1234+numOfMonitors. You can change the starting port by changing the INITIAL_PORT_NUMBER definition in `travelController.c:47`
+
+
+- The program reads string input from files and the user. To achieve this in C, char array-buffers had to be used. You can change the size of those buffer by changing the INPUT_BUFF_SIZE definition in the according source files. 
+
+- The makefiles of each implimentation provide a target *countryFolders* for creating the input file hierarchy given an inputFile.txt
+
+- To save memory and help the program maintain a small memory footprint. Memory duplication for repeating strings *(such as countries)* is eliminated by using string hash tables.
+
+- If invalid citizen records are given, only the first 100 are printed to save on terminal output space *(note that conflicting records for different countries might result in undefined behavior)*.
+
+- When using the named pipe implementation, the Fifos folder must exist and be accessible, because this is where the program places and accesses it’s named pipes.
+
+- Commands typed in the cli of the program might or might not have the special character “/” before them.
+
+- For the sockets implementation, the cyclicBufferSize is counted on number of entries and not in bytes.
