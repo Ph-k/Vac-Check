@@ -109,11 +109,11 @@ The program provides a tui to the user allowing him to interact with the informa
 
 4. ` /searchVaccinationStatus citizenID`: Outputs all the vaccination information *(for which viruses he is or isn’t vaccinated)* the program has for the requested citizen. This is done from the parent/VacCheck process by sending to all the monitor processes via pipes/sockets this request, and then the monitor process responsible for the citizen with citizedID sends back via pipe/socket all the vaccination information it has about him.   
 
-5. `/printPids`: prints the process id’s of all the child/monitor processes.
+5. `/exit`: send a signal/message to all the child/monitor processes which when received makes all the mointors to write some diagnostic information in their log files, de-allocate all the dynamically allocated memory, and then terminate. After all the monitor processes have terminated gracefully, VacCheck also de-allocates all its dynamically allocated memory and exits. 
 
-6. `/exit`: send a signal/message to all the child/monitor processes which when received makes all the mointors to write some diagnostic information in their log files, de-allocate all the dynamically allocated memory, and then terminate. After all the monitor processes have terminated gracefully, VacCheck also de-allocates all its dynamically allocated memory and exits. 
+6. `/printPids`: prints the process id’s of all the child/monitor processes.
 
-7. `/violentlyExit`: The parent/VacCheck process send a sig kill signal to all the child/monitor processes. NOTE: USE ONLY WHEN ABSOLITY NESSECERY, it is recommended that you always use the exit command. 
+7. `/violentlyExit`: The parent/VacCheck process sends a sig kill signal to all the child/monitor processes. NOTE: USE ONLY WHEN ABSOLUTELY NESSECERY, it is recommended that you always use the exit command since this does not perform any memory de-allocation. 
 
 # Source code files overview 
 #### (For both implementations *Named-Pipes-Src & Socket-Src*)
@@ -135,11 +135,11 @@ The program provides a tui to the user allowing him to interact with the informa
 
 Only for ‘Source/Named-Pipes-Src/VacCheckSource’:
 
-- ` travelSignalHandlers.c/h`: The named pipe implementation also using pipes for its intra-process communication. This module implements all the necessary signal handlers using the according system calls. Note that for the handlers to be as small in execution as possible, they just change several flags, which the controller checks when he is gets executed again.
+- ` travelSignalHandlers.c/h`: The named pipes implementation also uses signals for its intra-process communication. This module implements all the necessary signal handlers using the according system calls. Note that for the handlers to be as small in execution as possible, they just change several flags, which the controller checks when it is executed again.
 
 **‘Source/*impl src*/VacCheckMonitorSource’ directory:**
 
-- `Monitor.c`: This file contains the main() function of the monitor processes. It does all the necessary file reading and data structure initialization and then wait for the VacCheck process to request a query from the pipe or socket.
+- `Monitor.c`: This file contains the main() function of the monitor processes. It does all the necessary file reading and data structure initialization and then waits for the VacCheck process to request a query from the pipe or socket.
 
 - `monitorController.c/.h` & `monitorSignalHandlers.c/.h`: do the exact same thing as their VacCheck counterparts, but customized for the needs of the monitor processes.
 
@@ -153,19 +153,19 @@ Only for ‘Source/Named-Pipes-Src/VacCheckSource’:
 
 - A bit array `BitArrey.c/h`
 
-- A BloomFilter ‘BloomFilter.c/h’ *( uses the bit arrey)*
+- A BloomFilter `BloomFilter.c/h` *( uses the bit arrey)*
 
-- A skip list ‘SkipList.c’, *with custom data manipulation functions for the needs of the project*.
+- A skip list `SkipList.c`, *with custom data manipulation functions for the needs of the project*.
 
 - And a generic extensible hash table `HashTable.c/h`.
 
-` Source/Common-Src/DataStructures`: All these modules are utility pseudo data structures. *(pseudo because they are mostsly wrapper functions for the above data structures).
+` Source/Common-Src/DataStructures`: All these modules are utility pseudo data structures. *(pseudo because they are mostsly wrapper functions for the above data structures)*.
 
-- `Abacus.c/h` using the hashtable, it maintains a number of date counters which can be changed and accessed on O(1). Very useful in the travelStats command.
+- `Abacus.c/h` using the hashtable, it maintains a number of date counters which can be changed and accessed on O(1). Very useful for the travelStats command.
 
-- `StringDict.c/h`: Using the hash table implementation, it simply is a string dictionary which helps the program to eliminate any memory repletion of string data.
+- `StringDict.c/h`: Using the hash table implementation, it is simply a string dictionary which helps the program eliminate memory repetition of string data.
 
-- `Person.c/h`: Simulates a person entity, while taking care for the memory allocation and deallocation of him (name strings etc). Also provide functions to send his/her information over pipes or sockets *sendPerson()* & *recievePerson()*.
+- `Person.c/h`: Simulates a person entity, while taking care for the memory allocation and deallocation of him/her (name strings etc). Also provides functions to send his/her information over pipes or sockets *sendPerson()* & *recievePerson()*.
 
 - `Virus.c.h`: Simulates a virus entity. Similarly to the person one.
 
@@ -178,7 +178,6 @@ Only for ‘Source/Named-Pipes-Src/VacCheckSource’:
 - `Utilities.c/h`: Contains some auxiliary functions, mainly for string manipulation.
 
 # Useful notes:
-<![endif]-->
 
 - The socket implementation uses the ports starting from port 1234 to 1234+numOfMonitors. You can change the starting port by changing the INITIAL_PORT_NUMBER definition in `travelController.c:47`
 
@@ -189,7 +188,7 @@ Only for ‘Source/Named-Pipes-Src/VacCheckSource’:
 
 - To save memory and help the program maintain a small memory footprint. Memory duplication for repeating strings *(such as countries)* is eliminated by using string hash tables.
 
-- If invalid citizen records are given, only the first 100 are printed to save on terminal output space *(note that conflicting records for different countries might result in undefined behavior)*.
+- If invalid citizen records are given, only the first 100 per monitor are printed to save on terminal output space *(note that conflicting records for different countries might result in undefined behavior)*.
 
 - When using the named pipe implementation, the Fifos folder must exist and be accessible, because this is where the program places and accesses it’s named pipes.
 
