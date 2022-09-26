@@ -1,2 +1,2 @@
-# This folder is where the program palces it's named pipes/fifos. It MUST exist in order for the program to run.
+# This folder is where the program places it's named pipes/fifos. It MUST exist in order for the program to run.
 # When the program is not executed this folder shall be empty. When the program is executed, the fifos will be placed here.
